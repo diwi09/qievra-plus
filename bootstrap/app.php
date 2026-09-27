@@ -3,7 +3,19 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
-use Illuminate\Http\Request;
+
+// ALIKAN STORAGE KE /tmp JIKA BERADA DI VERCEL
+if (isset($_ENV['VERCEL']) || isset($_SERVER['VERCEL']) || getenv('VERCEL')) {
+    $storagePath = '/tmp/storage';
+    if (!is_dir($storagePath)) {
+        @mkdir($storagePath . '/framework/views', 0777, true);
+        @mkdir($storagePath . '/framework/cache/data', 0777, true);
+        @mkdir($storagePath . '/framework/sessions', 0777, true);
+        @mkdir($storagePath . '/logs', 0777, true);
+        @mkdir($storagePath . '/app/public', 0777, true);
+    }
+    app()->useStoragePath($storagePath);
+}
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -11,13 +23,9 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
-   ->withMiddleware(function (Middleware $middleware) {
-    $middleware->alias([
-        'admin' => \App\Http\Middleware\AdminMiddleware::class,
-    ]);
-})
-    ->withExceptions(function (Exceptions $exceptions): void {
-        $exceptions->shouldRenderJsonWhen(
-            fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
-        );
+    ->withMiddleware(function (Middleware $middleware) {
+        //
+    })
+    ->withExceptions(function (Exceptions $exceptions) {
+        //
     })->create();

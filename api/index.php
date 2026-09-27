@@ -1,39 +1,12 @@
 <?php
 
-use Illuminate\Contracts\Http\Kernel;
-use Illuminate\Http\Request;
+// Pastikan VERCEL env terdeteksi
+putenv('VERCEL=1');
+$_ENV['VERCEL'] = '1';
+$_SERVER['VERCEL'] = '1';
 
-define('LARAVEL_START', microtime(true));
+// Alihkan folder compiled views bawaan
+putenv('VIEW_COMPILED_PATH=/tmp/storage/framework/views');
 
-// Buat folder kerja di direktori /tmp Vercel
-$storageDirs = [
-    '/tmp/storage/app/public',
-    '/tmp/storage/framework/cache/data',
-    '/tmp/storage/framework/sessions',
-    '/tmp/storage/framework/views',
-    '/tmp/storage/logs',
-];
-
-foreach ($storageDirs as $dir) {
-    if (!is_dir($dir)) {
-        mkdir($dir, 0755, true);
-    }
-}
-
-// Muat Composer autoloader
-require __DIR__ . '/../vendor/autoload.php';
-
-// Inisialisasi aplikasi Laravel
-$app = require_once __DIR__ . '/../bootstrap/app.php';
-
-// Alihkan path storage Laravel ke /tmp
-$app->useStoragePath('/tmp/storage');
-
-// Jalankan HTTP Kernel
-$kernel = $app->make(Kernel::class);
-
-$response = $kernel->handle(
-    $request = Request::capture()
-)->send();
-
-$kernel->terminate($request, $response);
+// Load index publik Laravel
+require __DIR__ . '/../public/index.php';
