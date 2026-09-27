@@ -17,24 +17,16 @@ $app = Application::configure(basePath: dirname(__DIR__))
         //
     })->create();
 
-// Alihkan folder storage ke /tmp jika berjalan di Vercel
+// Pastikan storage path selalu dialihkan ke /tmp saat di Vercel
 if (isset($_ENV['VERCEL']) || isset($_SERVER['VERCEL']) || getenv('VERCEL')) {
     $storagePath = '/tmp/storage';
-
-    $subDirs = [
-        '/framework/views',
-        '/framework/cache/data',
-        '/framework/sessions',
-        '/logs',
-        '/app/public',
-    ];
-
-    foreach ($subDirs as $dir) {
-        if (!is_dir($storagePath . $dir)) {
-            @mkdir($storagePath . $dir, 0777, true);
-        }
+    if (!is_dir($storagePath)) {
+        @mkdir($storagePath . '/framework/views', 0777, true);
+        @mkdir($storagePath . '/framework/cache/data', 0777, true);
+        @mkdir($storagePath . '/framework/sessions', 0777, true);
+        @mkdir($storagePath . '/logs', 0777, true);
+        @mkdir($storagePath . '/app/public', 0777, true);
     }
-
     $app->useStoragePath($storagePath);
 }
 
