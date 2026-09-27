@@ -1,6 +1,6 @@
 <?php
 
-// 1. Siapkan folder temporer di /tmp
+// 1. Buat direktori temporer di /tmp
 $baseTmp = '/tmp/storage';
 $subDirs = [
     $baseTmp . '/framework/views',
@@ -16,21 +16,15 @@ foreach ($subDirs as $dir) {
     }
 }
 
-// 2. Set environment fallback agar getDefaultDriver() tidak pernah null
-putenv('APP_ENV=production');
-putenv('APP_DEBUG=true');
+// 2. Set environment runtime
 putenv('VERCEL=1');
+$_ENV['VERCEL'] = '1';
+$_SERVER['VERCEL'] = '1';
+
+putenv('VIEW_COMPILED_PATH=' . $baseTmp . '/framework/views');
 putenv('SESSION_DRIVER=cookie');
 putenv('CACHE_STORE=array');
 putenv('FILESYSTEM_DISK=local');
-putenv('VIEW_COMPILED_PATH=' . $baseTmp . '/framework/views');
 
-// Hindari pemanggilan cache konfigurasi read-only
-putenv('APP_CONFIG_CACHE=');
-putenv('APP_SERVICES_CACHE=');
-putenv('APP_PACKAGES_CACHE=');
-putenv('APP_ROUTES_CACHE=');
-putenv('APP_EVENTS_CACHE=');
-
-// 3. Muat aplikasi Laravel
+// 3. Jalankan entrypoint Laravel
 require __DIR__ . '/../public/index.php';
