@@ -1,6 +1,6 @@
 <?php
 
-// 1. Definisikan folder penyimpanan serverless di /tmp
+// 1. Siapkan folder temporer di /tmp
 $baseTmp = '/tmp/storage';
 $subDirs = [
     $baseTmp . '/framework/views',
@@ -8,7 +8,6 @@ $subDirs = [
     $baseTmp . '/framework/sessions',
     $baseTmp . '/logs',
     $baseTmp . '/app/public',
-    '/tmp/bootstrap/cache'
 ];
 
 foreach ($subDirs as $dir) {
@@ -17,16 +16,21 @@ foreach ($subDirs as $dir) {
     }
 }
 
-// 2. Set environment runtime
+// 2. Set environment fallback agar getDefaultDriver() tidak pernah null
+putenv('APP_ENV=production');
+putenv('APP_DEBUG=true');
 putenv('VERCEL=1');
-$_ENV['VERCEL'] = '1';
-$_SERVER['VERCEL'] = '1';
-
-putenv('VIEW_COMPILED_PATH=' . $baseTmp . '/framework/views');
-putenv('APP_SERVICES_CACHE=/tmp/bootstrap/cache/services.php');
-putenv('APP_PACKAGES_CACHE=/tmp/bootstrap/cache/packages.php');
 putenv('SESSION_DRIVER=cookie');
 putenv('CACHE_STORE=array');
+putenv('FILESYSTEM_DISK=local');
+putenv('VIEW_COMPILED_PATH=' . $baseTmp . '/framework/views');
 
-// 3. Jalankan index publik Laravel
+// Hindari pemanggilan cache konfigurasi read-only
+putenv('APP_CONFIG_CACHE=');
+putenv('APP_SERVICES_CACHE=');
+putenv('APP_PACKAGES_CACHE=');
+putenv('APP_ROUTES_CACHE=');
+putenv('APP_EVENTS_CACHE=');
+
+// 3. Muat aplikasi Laravel
 require __DIR__ . '/../public/index.php';
