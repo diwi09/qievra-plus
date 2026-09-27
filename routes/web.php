@@ -12,11 +12,41 @@ use App\Http\Controllers\ClientOrderController;
 use App\Models\Service;
 use App\Models\Order;
 
-// 1. Halaman Beranda (Landing Page)
+// 1. Halaman Beranda (Landing Page) dengan Fallback Aman untuk Vercel
 Route::get('/', function () {
-    $services = Service::where('is_active', true)
-        ->orderBy('order_position', 'asc')
-        ->get();
+    try {
+        $services = Service::where('is_active', true)
+            ->orderBy('order_position', 'asc')
+            ->get();
+    } catch (\Throwable $th) {
+        // Fallback jika database belum terhubung di Vercel
+        $services = collect([
+            (object) [
+                'id' => 1,
+                'title' => 'Pengembangan Sistem & Aplikasi Web/Mobile',
+                'description' => 'Rancang bangun website, aplikasi Android/iOS, dashboard analitik, dan sistem informasi tugas akhir dengan arsitektur modern.',
+                'badge' => 'FULL-STACK DEV',
+                'badge_color' => 'blue',
+                'image_url' => 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?q=80&w=1200&auto=format&fit=crop'
+            ],
+            (object) [
+                'id' => 2,
+                'title' => 'Olah Data Statistik & Analisis Kuantitatif/Kualitatif',
+                'description' => 'Pendampingan olah data skripsi/tesis menggunakan SPSS, SmartPLS, SEM-AMOS, EViews, Python, dan R-Studio teruji akurat.',
+                'badge' => 'DATA ANALYTICS',
+                'badge_color' => 'emerald',
+                'image_url' => 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=1200&auto=format&fit=crop'
+            ],
+            (object) [
+                'id' => 3,
+                'title' => 'Editing & Parafrase Naskah Skripsi / Tesis',
+                'description' => 'Penyelarasan format template kampus, sitasi Mendeley/Zotero, penulisan metodologi, dan uji lolos Turnitin di bawah batas toleransi.',
+                'badge' => 'ACADEMIC WRITING',
+                'badge_color' => 'purple',
+                'image_url' => 'https://images.unsplash.com/photo-1455390582262-044cdead277a?q=80&w=1200&auto=format&fit=crop'
+            ]
+        ]);
+    }
 
     return view('welcome', compact('services'));
 })->name('home');
@@ -71,16 +101,20 @@ Route::get('/cek-pesanan', function (Request $request) {
         $searched = true;
         $cleanPhone = preg_replace('/[^0-9]/', '', $keyword);
 
-        $orders = Order::with('service')
-            ->where(function ($query) use ($keyword, $cleanPhone) {
-                $query->where('order_code', 'like', "%{$keyword}%");
+        try {
+            $orders = Order::with('service')
+                ->where(function ($query) use ($keyword, $cleanPhone) {
+                    $query->where('order_code', 'like', "%{$keyword}%");
 
-                if (!empty($cleanPhone)) {
-                    $query->orWhere('client_whatsapp', 'like', "%{$cleanPhone}%");
-                }
-            })
-            ->latest()
-            ->get();
+                    if (!empty($cleanPhone)) {
+                        $query->orWhere('client_whatsapp', 'like', "%{$cleanPhone}%");
+                    }
+                })
+                ->latest()
+                ->get();
+        } catch (\Throwable $th) {
+            $orders = collect([]);
+        }
     }
 
     return view('orders.track', compact('orders', 'searched', 'keyword'));
@@ -100,13 +134,8 @@ Route::get('/unduh-hasil/{order_code}', function ($order_code) {
         abort(404, 'Berkas pengerjaan belum tersedia atau file fisik tidak ditemukan di server.');
     }
 
-    // Ambil path absolut fisik file di disk
     $absolutePath = Storage::disk('public')->path($order->result_file_path);
-
-    // Ambil ekstensi asli berkas
     $extension = pathinfo($absolutePath, PATHINFO_EXTENSION) ?: 'zip';
-
-    // Format nama file hasil unduhan
     $cleanClientName = Str::slug($order->client_name) ?: 'klien';
     $downloadFileName = 'HASIL-' . $order->order_code . '-' . strtoupper($cleanClientName) . '.' . $extension;
 
